@@ -1,5 +1,5 @@
 cabal-version:   3.0
-name:            Applications
+name:            JournalH
 version:         0.1.0.0
 license:         NONE
 build-type:      Simple
@@ -8,7 +8,7 @@ extra-doc-files: CHANGELOG.md
 common warnings
     ghc-options: -Wall
 
-executable Applications
+executable jrnlh
     import:           warnings
     main-is:          Main.hs
     other-modules:    Types
