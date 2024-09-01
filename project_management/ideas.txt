@@ -1,0 +1,1 @@
+Command line argument version for adding a new jounral entry. This is useful for automated journaling
