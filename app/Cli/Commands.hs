@@ -2,21 +2,13 @@
 
 module Cli.Commands where
 
+import Cli.Rendering (JRender (render))
 import Cli.Types (TagSetStrategy (TSSAnd, TSSOr))
 import Control.Monad (when)
 import Data.Maybe (fromJust)
 import Data.Time (TimeZone, UTCTime (UTCTime), ZonedTime, defaultTimeLocale, formatTime, getCurrentTime, readPTime, utcToZonedTime)
-import Debug.Trace (traceM)
-import Relations (filterAndTags)
+import Relations (filterAndTags, filterOrTags)
 import Share
-import String.ANSI (red)
-import System.Directory (XdgDirectory (XdgData), doesFileExist, getXdgDirectory)
-import System.Environment (getEnv)
-import System.IO (readFile')
-import System.IO.Temp (emptySystemTempFile)
-import System.Process (callProcess)
-import Text.ParserCombinators.ReadP
-import Text.ParserCombinators.ReadP (readP_to_S)
 import Types
 
 addNewEntry :: IO ()
@@ -32,18 +24,15 @@ addNewEntry = do
     writeFile app_dir updatedContents
 
 viewJournal :: Tags -> TagSetStrategy -> IO ()
--- viewJournal ts TSSOr = undefined
-viewJournal ts TSSAnd = do
+viewJournal ts tsstrat = do
   ad <- getAppDataDirectory
   x <- readFile ad
-  jes <- filterAndTags ts <$> readIO x
+  jes <- stratFilter tsstrat ts <$> readIO x
 
-  putStr $ show (JEntriesDoc jes)
-
-showEntryInTimeZone :: TimeZone -> JournalEntry -> String
-showEntryInTimeZone tz (JournalEntry {entry_time, tags, entry}) = journalEntryFormat ts (show tags) entry
+  putStr $ render (JEntriesDoc jes)
   where
-    ts = formatTime defaultTimeLocale preferredTimeFormatting (utcToZonedTime tz entry_time) ++ show tz
+    stratFilter TSSOr = filterOrTags
+    stratFilter TSSAnd = filterAndTags
 
 newEntry :: IO (Maybe JournalEntry)
 newEntry = do

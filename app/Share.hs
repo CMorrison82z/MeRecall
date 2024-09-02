@@ -11,8 +11,8 @@ app_name = "MyJournalApp"
 
 getAppDataDirectory = getXdgDirectory XdgData app_name
 
-journalEntryFormat :: String -> String -> String -> String
-journalEntryFormat time_s tags_s entry_s = '[' : time_s ++ ']' : ' ' : tags_s ++ '\n' : entry_s
+journalEntryDocFormat :: String -> String -> String -> String
+journalEntryDocFormat time_s tags_s entry_s = '[' : time_s ++ ']' : ' ' : tags_s ++ '\n' : entry_s
 
 preferredTimeFormatting = "%Y-%m-%d %H:%M:%S"
 

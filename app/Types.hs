@@ -7,7 +7,7 @@ import Data.List (isPrefixOf)
 import Data.Maybe (catMaybes, mapMaybe)
 import Data.Time (UTCTime, defaultTimeLocale, formatTime, readPTime)
 import Debug.Trace (trace, traceShow, traceShowId, traceShowM)
-import Share (journalEntryFormat, preferredTimeFormatting, splitAround)
+import Share (journalEntryDocFormat, preferredTimeFormatting, splitAround)
 import Text.ParserCombinators.ReadP
 
 newtype Tag = Tag String
@@ -42,7 +42,7 @@ data JournalEntry = JournalEntry
   }
 
 instance Show JournalEntry where
-  show (JournalEntry {entry_time, tags, entry}) = journalEntryFormat formattedTime (show tags) entry
+  show (JournalEntry {entry_time, tags, entry}) = journalEntryDocFormat formattedTime (show tags) entry
     where
       formattedTime = formatTime defaultTimeLocale preferredTimeFormatting entry_time
 

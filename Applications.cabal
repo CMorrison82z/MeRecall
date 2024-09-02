@@ -19,6 +19,7 @@ executable jrnlh
                       Cli.Types
                       Cli.Parse
                       Cli.Commands
+                      Cli.Rendering
     build-depends:    base ^>=4.17.2.1
                     , optparse-applicative >= 0.18.1.0
                     , process
