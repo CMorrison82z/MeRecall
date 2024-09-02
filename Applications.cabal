@@ -15,6 +15,7 @@ executable jrnlh
                       Parse
                       Util
                       Share
+                      Relations
                       Cli.Types
                       Cli.Parse
                       Cli.Commands

@@ -7,9 +7,6 @@ import System.IO (readFile')
 import System.IO.Temp (emptySystemTempFile)
 import System.Process (callProcess)
 
-class AnsiShow a where
-  ansiShow :: a -> String
-
 app_name = "MyJournalApp"
 
 getAppDataDirectory = getXdgDirectory XdgData app_name

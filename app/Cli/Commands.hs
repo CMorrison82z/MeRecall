@@ -1,9 +1,13 @@
+{-# LANGUAGE ScopedTypeVariables #-}
+
 module Cli.Commands where
 
 import Cli.Types (TagSetStrategy (TSSAnd, TSSOr))
 import Control.Monad (when)
 import Data.Maybe (fromJust)
 import Data.Time (TimeZone, UTCTime (UTCTime), ZonedTime, defaultTimeLocale, formatTime, getCurrentTime, readPTime, utcToZonedTime)
+import Debug.Trace (traceM)
+import Relations (filterAndTags)
 import Share
 import String.ANSI (red)
 import System.Directory (XdgDirectory (XdgData), doesFileExist, getXdgDirectory)
@@ -32,9 +36,9 @@ viewJournal :: Tags -> TagSetStrategy -> IO ()
 viewJournal ts TSSAnd = do
   ad <- getAppDataDirectory
   x <- readFile ad
-  -- let (JEntriesDoc es) = read x
-  let je = JEntriesDoc . fst . last $ readP_to_S readPJournal x
-  print $ show je
+  jes <- filterAndTags ts <$> readIO x
+
+  putStr $ show (JEntriesDoc jes)
 
 showEntryInTimeZone :: TimeZone -> JournalEntry -> String
 showEntryInTimeZone tz (JournalEntry {entry_time, tags, entry}) = journalEntryFormat ts (show tags) entry

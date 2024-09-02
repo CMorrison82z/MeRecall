@@ -6,12 +6,12 @@ import Data.Char (isAlpha, isAlphaNum, isSpace)
 import Data.List (isPrefixOf)
 import Data.Maybe (catMaybes, mapMaybe)
 import Data.Time (UTCTime, defaultTimeLocale, formatTime, readPTime)
-import Debug.Trace (traceShow, traceShowId, traceShowM)
-import Share (AnsiShow, ansiShow, journalEntryFormat, preferredTimeFormatting, splitAround)
-import String.ANSI (black, green, red)
+import Debug.Trace (trace, traceShow, traceShowId, traceShowM)
+import Share (journalEntryFormat, preferredTimeFormatting, splitAround)
 import Text.ParserCombinators.ReadP
 
 newtype Tag = Tag String
+  deriving (Eq)
 
 instance Show Tag where
   show (Tag s) = '@' : s
@@ -23,22 +23,17 @@ readPTag = Tag <$> (skipSpaces >> char '@' >> munch1 isAlphaNum)
 --   readsPrec _ = readP_to_S readPTag
 --   readList = readP_to_S $ many (readPTag <* skipSpaces)
 
-instance AnsiShow Tag where
-  ansiShow (Tag s) = red $ '@' : s
-
 newtype Tags = Tags [Tag]
+  deriving (Eq)
 
 instance Show Tags where
   show (Tags xs) = unwords . fmap show $ xs
 
-tagsReadP :: ReadP Tags
-tagsReadP = fmap Tags $ sepBy readPTag $ char ' '
+readPTags :: ReadP Tags
+readPTags = fmap Tags $ sepBy readPTag (char ' ') -- <* eof
 
 -- instance Read Tags where
---   readsPrec _ = readP_to_S tagsReadP
-
-instance AnsiShow Tags where
-  ansiShow (Tags xs) = unwords . fmap ansiShow $ xs
+--   readsPrec _ = readP_to_S readPTags
 
 data JournalEntry = JournalEntry
   { entry_time :: UTCTime,
@@ -51,11 +46,6 @@ instance Show JournalEntry where
     where
       formattedTime = formatTime defaultTimeLocale preferredTimeFormatting entry_time
 
-instance AnsiShow JournalEntry where
-  ansiShow (JournalEntry {entry_time, tags, entry}) = journalEntryFormat (black formattedTime) (ansiShow tags) $ green entry
-    where
-      formattedTime = formatTime defaultTimeLocale preferredTimeFormatting entry_time
-
 -- NOTE:
 -- This is for writing to the data document file. In order to satisfy the expected laws of `Show` and `Read`
 newtype JEntriesDoc = JEntriesDoc [JournalEntry]
@@ -63,8 +53,8 @@ newtype JEntriesDoc = JEntriesDoc [JournalEntry]
 instance Show JEntriesDoc where
   show (JEntriesDoc js) = unlines . fmap show $ js
 
-instance AnsiShow JEntriesDoc where
-  ansiShow (JEntriesDoc js) = unlines . fmap ansiShow $ js
+instance Read JEntriesDoc where
+  readsPrec _ = readP_to_S (JEntriesDoc <$> readPJournal <* eof)
 
 data JournalLine = DateTagsLine (UTCTime, Tags) | StringLine String
   deriving (Show)
@@ -80,42 +70,47 @@ mapJournalLineString (StringLine s) = Just s
 readPDateTags :: ReadP (UTCTime, Tags)
 readPDateTags = do
   d <- readPDate
-  t <- readPTags
+  t <- readPSTags
   return (d, t)
   where
     readPDate = between (char '[') (char ']') $ readPTime True defaultTimeLocale preferredTimeFormatting
-    readPTags = skipSpaces >> tagsReadP
+    readPSTags = skipSpaces >> readPTags
 
 readPJLine :: ReadP JournalLine
 readPJLine = (DateTagsLine <$> readPDateTags) <++ (StringLine <$> munch (/= '\n'))
 
+-- TODO:
+-- Would be nice to remove the occasional trailing line due to `sepBy`. using `endBy` can cause problems if the last line doesn't have a newline character.
 readPJLines :: ReadP [JournalLine]
-readPJLines = endBy readPJLine $ char '\n'
+readPJLines = sepBy readPJLine $ char '\n'
 
 toJournals :: [JournalLine] -> [JournalEntry]
-toJournals js = go js []
+toJournals js = go (js) []
   where
     go (DateTagsLine (d, t) : jlines) acc = go restJs (acc ++ [JournalEntry {entry_time = d, tags = t, entry = jentry}])
       where
         -- NOTE:
         -- `init` is to get rid of the trailing newline character introduced by `unlines`
-        jentry = init . unlines . mapMaybe mapJournalLineString $ jentryLines
+        jentry = init . unlines . mapMaybe mapJournalLineString $ (jentryLines)
         (jentryLines, restJs) =
           span
             isJournalLineString
-            jlines
+            (jlines)
     go [] acc = acc
     go _ _ = undefined
 
 readPJournal :: ReadP [JournalEntry]
 readPJournal = toJournals <$> readPJLines
 
+readJournal :: ReadS [JournalEntry]
+readJournal = readP_to_S (readPJournal <* eof)
+
 -- OLD Stuff.
 -- May want to use it again, but using parsing style from above
 -- readPJournalEntry :: ReadP JournalEntry
 -- readPJournalEntry = do
 --   jeTime <- between (char '[') (char ']') $ readPTime True defaultTimeLocale preferredTimeFormatting
---   jeTags <- between skipSpaces (char '\n') tagsReadP
+--   jeTags <- between skipSpaces (char '\n') readPTags
 --   entryStr <- manyTill get (optional (char '\n') >> checkEndOfEntry)
 --   return $ JournalEntry jeTime jeTags entryStr
 --
