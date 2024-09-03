@@ -26,7 +26,7 @@ main = join $ customExecParser p opts
             <> progDesc appName
             <> header
               ( appName
-                  ++ " - A freaking POGGERS journalling app"
+                  ++ " - A simple journaling app"
               )
         )
     p = prefs showHelpOnEmpty
