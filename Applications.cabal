@@ -8,7 +8,7 @@ extra-doc-files: CHANGELOG.md
 common warnings
     ghc-options: -Wall
 
-executable jrnlh
+executable jnlh
     import:           warnings
     main-is:          Main.hs
     other-modules:    Types

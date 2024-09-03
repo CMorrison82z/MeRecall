@@ -2,11 +2,11 @@
 
 module Cli.Commands where
 
-import Cli.Rendering (JRender (render))
+import Cli.Rendering
 import Cli.Types (TagSetStrategy (TSSAnd, TSSOr))
 import Control.Monad (when)
 import Data.Maybe (fromJust)
-import Data.Time (TimeZone, UTCTime (UTCTime), ZonedTime, defaultTimeLocale, formatTime, getCurrentTime, readPTime, utcToZonedTime)
+import Data.Time (TimeZone, UTCTime (UTCTime), ZonedTime, defaultTimeLocale, formatTime, getCurrentTime, getCurrentTimeZone, readPTime, utcToZonedTime)
 import Relations (filterAndTags, filterOrTags)
 import Share
 import Types
@@ -27,9 +27,10 @@ viewJournal :: Tags -> TagSetStrategy -> IO ()
 viewJournal ts tsstrat = do
   ad <- getAppDataDirectory
   x <- readFile ad
+  tz <- getCurrentTimeZone
   jes <- stratFilter tsstrat ts <$> readIO x
 
-  putStr $ render (JEntriesDoc jes)
+  putStr $ '\n' : renderJournalEntries ts tz (JEntriesDoc jes)
   where
     stratFilter TSSOr = filterOrTags
     stratFilter TSSAnd = filterAndTags
