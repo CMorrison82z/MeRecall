@@ -7,7 +7,7 @@ import Data.List (isPrefixOf)
 import Data.Maybe (catMaybes, mapMaybe)
 import Data.Time (UTCTime, defaultTimeLocale, formatTime, readPTime)
 import Debug.Trace (trace, traceShow, traceShowId, traceShowM)
-import JournalH.Share (journalEntryDocFormat, preferredTimeFormatting, splitAround)
+import JournalH.Share (journalEntryDocFormat, preferredTimeFormatting)
 import Text.ParserCombinators.ReadP
 
 newtype Tag = Tag String

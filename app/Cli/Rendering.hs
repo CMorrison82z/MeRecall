@@ -2,7 +2,7 @@ module Cli.Rendering where
 
 import Cli.Types
 import Data.Time (TimeZone, defaultTimeLocale, formatTime, readPTime, utcToZonedTime)
-import JournalH.Share (preferredTimeFormatting, splitAround)
+import JournalH.Share (preferredTimeFormatting)
 import JournalH.Types
 import String.ANSI
 
