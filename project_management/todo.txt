@@ -1,1 +1,2 @@
-- Time zones
+- Option to add entries via Cli (rather than a temporary file).
+  This has use case for automated journaling
