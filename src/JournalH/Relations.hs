@@ -1,7 +1,7 @@
-module Relations where
+module JournalH.Relations where
 
 import Data.List (intersect)
-import Types (JEntriesDoc (JEntriesDoc), JournalEntry (JournalEntry, tags), Tags (Tags))
+import JournalH.Types (JEntriesDoc (JEntriesDoc), JournalEntry (JournalEntry, tags), Tags (Tags))
 
 -- NOTE:
 -- This checks if all `ts` are in JournalEntry tags, but the JournalEntry could have more than `ts`

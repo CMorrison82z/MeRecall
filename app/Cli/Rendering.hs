@@ -2,9 +2,9 @@ module Cli.Rendering where
 
 import Cli.Types
 import Data.Time (TimeZone, defaultTimeLocale, formatTime, readPTime, utcToZonedTime)
-import Share (preferredTimeFormatting, splitAround)
+import JournalH.Share (preferredTimeFormatting, splitAround)
+import JournalH.Types
 import String.ANSI
-import Types
 
 -- TODO:
 -- Alternating colors could be cool. Also an interesting problem to solve "how to alternate a function".

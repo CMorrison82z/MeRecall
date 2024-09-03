@@ -1,5 +1,3 @@
-{-# LANGUAGE ScopedTypeVariables #-}
-
 module Cli.Commands where
 
 import Cli.Rendering
@@ -7,14 +5,33 @@ import Cli.Types (TagSetStrategy (TSSAnd, TSSOr))
 import Control.Monad (when)
 import Data.Maybe (fromJust)
 import Data.Time (TimeZone, UTCTime (UTCTime), ZonedTime, defaultTimeLocale, formatTime, getCurrentTime, getCurrentTimeZone, readPTime, utcToZonedTime)
-import Relations (filterAndTags, filterOrTags)
+import JournalH.Relations (filterAndTags, filterOrTags)
+import JournalH.Types
 import Share
-import Types
+import System.Directory (doesFileExist)
+import System.Environment (getEnv)
+import System.IO (readFile')
+import System.IO.Temp (emptySystemTempFile)
+import System.Process (callProcess)
+
+readFileOrEmpty fp = do
+  b <- doesFileExist fp
+  if b then readFile fp else pure ""
+
+editWithEditor :: IO String
+editWithEditor = do
+  tempFile <- emptySystemTempFile "tempfile.txt"
+
+  editor <- getEnv "EDITOR"
+
+  callProcess editor [tempFile]
+
+  readFile' tempFile
 
 addNewEntry :: IO ()
 addNewEntry = do
   je <- fromJust <$> newEntry
-  app_dir <- getAppDataDirectory
+  app_dir <- defaultJournalFile
   appDataContents <- readFileOrEmpty app_dir
   let updatedContents = appDataContents ++ '\n' : show je
   -- NOTE:
@@ -25,7 +42,9 @@ addNewEntry = do
 
 viewJournal :: Tags -> TagSetStrategy -> IO ()
 viewJournal ts tsstrat = do
-  ad <- getAppDataDirectory
+  -- TODO:
+  -- Warn user if app has never been used before.
+  ad <- defaultJournalFile
   x <- readFile ad
   tz <- getCurrentTimeZone
   jes <- stratFilter tsstrat ts <$> readIO x

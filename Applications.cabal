@@ -1,5 +1,5 @@
 cabal-version:   3.0
-name:            JournalH
+name:            journalh
 version:         0.1.0.0
 license:         NONE
 build-type:      Simple
@@ -8,26 +8,40 @@ extra-doc-files: CHANGELOG.md
 common warnings
     ghc-options: -Wall
 
+library
+    import:           warnings
+    exposed-modules:
+                      JournalH.Types
+                      JournalH.Share
+                      JournalH.Relations
+
+    hs-source-dirs:   src
+
+    build-depends:    base ^>=4.17.2.1
+                    , time >= 1.14
+
+    default-extensions: NamedFieldPuns
+    default-language: Haskell2010
+
 executable jnlh
     import:           warnings
     main-is:          Main.hs
-    other-modules:    Types
-                      Parse
-                      Util
-                      Share
-                      Relations
-                      Cli.Types
+    other-modules:    Cli.Types
                       Cli.Parse
                       Cli.Commands
                       Cli.Rendering
+                      Share
     build-depends:    base ^>=4.17.2.1
+                    , journalh
+                    , time >= 1.14
                     , optparse-applicative >= 0.18.1.0
                     , process
                     , temporary
                     , text-ansi
                     , directory >= 1.3.8.5
                     , filepath >= 1.5.2.0
-                    , time >= 1.14
     hs-source-dirs:   app
     default-extensions: NamedFieldPuns
+                      , ScopedTypeVariables
+
     default-language: Haskell2010

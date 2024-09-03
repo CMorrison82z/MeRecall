@@ -1,4 +1,4 @@
-module Types where
+module JournalH.Types where
 
 import Control.Applicative ((<|>))
 import Control.Monad (void)
@@ -7,7 +7,7 @@ import Data.List (isPrefixOf)
 import Data.Maybe (catMaybes, mapMaybe)
 import Data.Time (UTCTime, defaultTimeLocale, formatTime, readPTime)
 import Debug.Trace (trace, traceShow, traceShowId, traceShowM)
-import Share (journalEntryDocFormat, preferredTimeFormatting, splitAround)
+import JournalH.Share (journalEntryDocFormat, preferredTimeFormatting, splitAround)
 import Text.ParserCombinators.ReadP
 
 newtype Tag = Tag String

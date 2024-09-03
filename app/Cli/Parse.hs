@@ -2,8 +2,8 @@ module Cli.Parse where
 
 import Cli.Commands (addNewEntry, viewJournal)
 import Cli.Types (TagSetStrategy (TSSAnd, TSSOr))
+import JournalH.Types
 import Options.Applicative
-import Types
 
 cli :: Parser (IO ())
 cli =
