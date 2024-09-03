@@ -100,7 +100,7 @@ toJournals js = go (js) []
     go _ _ = undefined
 
 readPJournal :: ReadP [JournalEntry]
-readPJournal = toJournals <$> readPJLines
+readPJournal = toJournals <$> (skipSpaces >> readPJLines)
 
 readJournal :: ReadS [JournalEntry]
 readJournal = readP_to_S (readPJournal <* eof)
