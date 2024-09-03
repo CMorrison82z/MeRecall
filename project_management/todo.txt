@@ -3,3 +3,9 @@
 
 - Ability to specify another time for the journal entry (Ex. `yesterday: Did something important.`)
 - Templates. Specify a template format for a journal entry
+- Filter on time as well as tags
+- Filter on entry content (does it contain a certain phrase or regex)
+- Exclusion filter
+- Modification commands (edit, delete, etc.) that respect a searh.
+  I.e., edit only entries searched for from the given filters.
+- A "brief" option for displaying journal entries (just shows title or something?)
