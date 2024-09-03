@@ -13,7 +13,7 @@ cli =
           "view"
           ( info
               ( (viewJournal . Tags <$> many (Tag <$> strArgument (metavar "TAGS...")))
-                  <*> flag TSSAnd TSSOr (long "or" <> help "Switch search strategy to `or` mode.")
+                  <*> flag TSSOr TSSAnd (long "or" <> help "Switch search strategy to `or` mode.")
               )
               (progDesc "View journal entries")
           )

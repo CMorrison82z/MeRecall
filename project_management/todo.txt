@@ -1,2 +1,5 @@
 - Option to add entries via Cli (rather than a temporary file).
   This has use case for automated journaling
+
+- Ability to specify another time for the journal entry (Ex. `yesterday: Did something important.`)
+- Templates. Specify a template format for a journal entry
