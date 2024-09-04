@@ -6,6 +6,8 @@ import JournalH.Share (preferredTimeFormatting)
 import JournalH.Types
 import String.ANSI
 
+brighterMagenta = rgb 223 192 255
+
 -- TODO:
 -- Alternating colors could be cool. Also an interesting problem to solve "how to alternate a function".
 -- Maybe zip ?
@@ -25,7 +27,7 @@ journalEntryFormat time_s tags_s entry_s = time_s ++ ' ' : tags_s ++ '\n' : entr
 --     ts = formatTime defaultTimeLocale preferredTimeFormatting (utcToZonedTime tz entry_time) ++ show tz
 
 renderJournalEntry :: Tags -> TimeZone -> JournalEntry -> String
-renderJournalEntry searchedTags tz JournalEntry {entry_time, tags, entry} = journalEntryFormat (brightBlack formattedTime) (renderTags searchedTags tags) (brightMagenta entry)
+renderJournalEntry searchedTags tz JournalEntry {entry_time, tags, entry} = journalEntryFormat (brightBlack formattedTime) (renderTags searchedTags tags) (brighterMagenta entry)
   where
     formattedTime = formatTime defaultTimeLocale preferredTimeFormatting (utcToZonedTime tz entry_time) ++ ' ' : show tz
 
