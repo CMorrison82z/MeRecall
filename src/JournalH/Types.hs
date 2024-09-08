@@ -4,7 +4,7 @@ import Control.Applicative ((<|>))
 import Control.Monad (void)
 import Data.Char (isAlpha, isAlphaNum, isSpace)
 import Data.List (isPrefixOf)
-import Data.Maybe (catMaybes, mapMaybe)
+import Data.Maybe (catMaybes, isJust, mapMaybe)
 import Data.Time (UTCTime, defaultTimeLocale, formatTime, readPTime)
 import Debug.Trace (trace, traceShow, traceShowId, traceShowM)
 import JournalH.Share (journalEntryDocFormat, preferredTimeFormatting)
@@ -60,8 +60,7 @@ data JournalLine = DateTagsLine (UTCTime, Tags) | StringLine String
   deriving (Show)
 
 isJournalLineString :: JournalLine -> Bool
-isJournalLineString (DateTagsLine _) = False
-isJournalLineString (StringLine _) = True
+isJournalLineString = isJust . mapJournalLineString
 
 mapJournalLineString :: JournalLine -> Maybe String
 mapJournalLineString (DateTagsLine _) = Nothing
@@ -101,9 +100,6 @@ toJournals js = go (js) []
 
 readPJournal :: ReadP [JournalEntry]
 readPJournal = toJournals <$> (skipSpaces >> readPJLines)
-
-readJournal :: ReadS [JournalEntry]
-readJournal = readP_to_S (readPJournal <* eof)
 
 -- OLD Stuff.
 -- May want to use it again, but using parsing style from above

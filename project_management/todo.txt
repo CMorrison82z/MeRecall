@@ -1,3 +1,23 @@
+Clock in and out :
+  - Output :
+      [startTime - endTime]
+      Some stuff at the start time.
+      --// End Log //--
+      Some notes at the end time.
+      [startTime - *]
+      Some stuff at the start time.
+  - File Format :
+      START: Time
+      Some notes.
+      END: Time
+      Some notes.
+      START: Time...
+      Some more notes.
+
+    Where `startTime - *` indicates a session in progress (needs to be ended.)
+
+- A tip message at the top of the file where users submit there entry that gets automatically removed when saved.
+  It would explain what the purpose of the opened buffer is for. (Ex. "Enter your journal entry below :")
 - Option to add entries via Cli (rather than a temporary file).
   This has use case for automated journaling
 
