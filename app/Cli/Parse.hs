@@ -1,7 +1,7 @@
 module Cli.Parse where
 
 import Cli.Commands (addNewEntry, createNewJobThing, startJobThing, stopJobThing, viewJobThing, viewJournal)
-import Cli.Types (TagSetStrategy (TSSAnd, TSSOr))
+import Cli.Types (JournalViewMethod (ViewInBuffer, ViewInTerminal), TagSetStrategy (TSSAnd, TSSOr))
 import JournalH.Types
 import Options.Applicative
 
@@ -23,10 +23,21 @@ journal_cli =
         <> command
           "view"
           ( info
-              ( (viewJournal . Tags <$> many (Tag <$> strArgument (metavar "TAGS...")))
-                  <*> flag TSSOr TSSAnd (long "and" <> help "Switch search strategy to `or` mode.")
+              ( (viewJournal . Tags <$> some (Tag <$> strArgument (metavar "TAGS...")))
+                  <*> flag
+                    TSSOr
+                    TSSAnd
+                    ( long "and"
+                        <> help "Get entries whose Tags contain at least all provided Tags. Switch search strategy to `and` mode."
+                    )
+                  <*> flag
+                    ViewInTerminal
+                    ViewInBuffer
+                    ( long "editor"
+                        <> help "View the entries in a temporary buffer (modifying the buffer has no effect). This can be useful for taking advantage of editor's search features."
+                    )
               )
-              (progDesc "View journal entries")
+              (progDesc "View journal entries. By default, captures any entries that contains at least one of the provided Tags")
           )
     )
 

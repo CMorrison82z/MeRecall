@@ -1,9 +1,9 @@
 module Cli.Commands where
 
 import Cli.Rendering
-import Cli.Types (TagSetStrategy (TSSAnd, TSSOr))
+import Cli.Types (JournalViewMethod (ViewInBuffer, ViewInTerminal), TagSetStrategy (TSSAnd, TSSOr))
 import Control.Exception (throw)
-import Control.Monad (when)
+import Control.Monad (void, when)
 import Data.Fixed (Fixed (MkFixed), showFixed)
 import Data.Maybe (fromJust)
 import Data.Time (TimeZone, UTCTime (UTCTime, utctDay, utctDayTime), ZonedTime, defaultTimeLocale, diffUTCTime, formatTime, getCurrentTime, getCurrentTimeZone, nominalDiffTimeToSeconds, readPTime, secondsToDiffTime, utcToZonedTime)
@@ -19,16 +19,26 @@ import System.Directory (createDirectory, createDirectoryIfMissing, doesFileExis
 import System.Environment (getEnv)
 import System.FilePath ((</>))
 import System.IO (readFile')
-import System.IO.Temp (emptySystemTempFile)
+import System.IO.Temp (emptySystemTempFile, writeSystemTempFile)
 import System.Process (callProcess)
 
 readFileOrEmpty fp = do
   b <- doesFileExist fp
   if b then readFile fp else pure ""
 
-editWithEditor :: IO String
-editWithEditor = do
-  tempFile <- emptySystemTempFile "tempfile.txt"
+inputFromEditor :: IO String
+inputFromEditor = do
+  tempFile <- emptySystemTempFile "journalh_input"
+
+  editor <- getEnv "EDITOR"
+
+  callProcess editor [tempFile]
+
+  readFile' tempFile
+
+editWithEditor :: String -> IO String
+editWithEditor s = do
+  tempFile <- writeSystemTempFile "journalh_edit" s
 
   editor <- getEnv "EDITOR"
 
@@ -48,8 +58,8 @@ addNewEntry = do
   when (length updatedContents > 0) $
     writeFile appFile updatedContents
 
-viewJournal :: Tags -> TagSetStrategy -> IO ()
-viewJournal ts tsstrat = do
+viewJournal :: Tags -> TagSetStrategy -> JournalViewMethod -> IO ()
+viewJournal ts tsstrat jview = do
   -- TODO:
   -- Warn user if app has never been used before.
   ad <- defaultJournalFile
@@ -57,14 +67,16 @@ viewJournal ts tsstrat = do
   tz <- getCurrentTimeZone
   jes <- stratFilter tsstrat ts <$> readIO x
 
-  putStr $ '\n' : renderJournalEntries ts tz (JEntriesDoc jes)
+  case jview of
+    ViewInTerminal -> putStr $ '\n' : renderJournalEntries ts tz (JEntriesDoc jes)
+    ViewInBuffer -> void . editWithEditor . show $ JEntriesDoc jes
   where
     stratFilter TSSOr = filterOrTags
     stratFilter TSSAnd = filterAndTags
 
 newEntry :: IO (Maybe JournalEntry)
 newEntry = do
-  contents <- editWithEditor
+  contents <- inputFromEditor
   case contents of
     "" -> pure Nothing
     _ -> do
@@ -96,7 +108,7 @@ startJobThing jobname = do
     Just (IncompSess _) -> error "Cannot start a new session because a previous session is incomplete. Stop it first." -- TODO: Maybe `throw` ?
     _ -> do
       t <- getCurrentTime
-      contents <- init <$> editWithEditor
+      contents <- init <$> inputFromEditor
       -- when (length works > 0) $
       writeFile jobWorkClockFile . show . WorkLogsDoc $ works ++ [IncompSess IncompleteSession {start_time = t, note = contents}]
   where
@@ -109,7 +121,7 @@ stopJobThing jobname = do
   case listToMaybeLast works of
     Just (IncompSess IncompleteSession {note, start_time}) -> do
       t <- getCurrentTime
-      contents <- init <$> editWithEditor
+      contents <- init <$> inputFromEditor
       -- when (length works > 0) $
       writeFile jobWorkClockFile . show . WorkLogsDoc $ init works ++ [CompSess CompleteSession {end_note = contents, start_note = note, time_interval = (start_time, t)}]
     _ -> error "No session in progress to stop."

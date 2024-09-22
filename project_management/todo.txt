@@ -29,3 +29,6 @@ Clock in and out :
 - Modification commands (edit, delete, etc.) that respect a searh.
   I.e., edit only entries searched for from the given filters.
 - A "brief" option for displaying journal entries (just shows title or something?)
+
+Bugs / Issues :
+  - Viewing entries in a buffer `view tag1 tag2 --editor` doesn't display time in correct timezone (it's just in UTC)
