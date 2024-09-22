@@ -1,6 +1,7 @@
 module Cli.Rendering where
 
 import Cli.Types
+import Data.List (isPrefixOf)
 import Data.Time (TimeZone, defaultTimeLocale, formatTime, readPTime, utcToZonedTime)
 import JournalH.ClockInOut.Types
 import JournalH.Share (preferredTimeFormatting)
@@ -10,14 +11,17 @@ import String.ANSI
 brighterMagenta = rgb 223 192 255
 
 -- TODO:
--- Alternating colors could be cool. Also an interesting problem to solve "how to alternate a function".
--- Maybe zip ?
+-- 1) Alternating colors could be cool. Also an interesting problem to solve "how to alternate a function".
+--    Maybe zip with a repeated list of the 2 functions `[f1, f2, f1, f2, ...]` ?
+-- 2) Only highlight to substring that was matched (from `isPrefixOf`).
 renderTags :: Tags -> Tags -> String
 renderTags (Tags searchedTags) (Tags ts) = unwords . fmap tagThing $ ts
   where
-    tagThing t
-      | t `elem` searchedTags = bold . yellow . show $ t
-      | otherwise = faint . yellow . show $ t
+    -- TODO:
+    -- Resolve badness of pattern matching out the Tag string, but then wrapping it back into a `Tag` for using `show`.
+    tagThing (Tag t)
+      | any (\(Tag st) -> st `isPrefixOf` t) searchedTags = bold . yellow . show $ Tag t
+      | otherwise = faint . yellow . show $ Tag t
 
 journalEntryFormat :: String -> String -> String -> String
 journalEntryFormat time_s tags_s entry_s = time_s ++ ' ' : tags_s ++ '\n' : entry_s ++ "\n"
