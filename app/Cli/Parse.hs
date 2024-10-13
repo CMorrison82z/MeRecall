@@ -28,6 +28,7 @@ journal_cli =
                     TSSOr
                     TSSAnd
                     ( long "and"
+                        <> short 'n'
                         <> help "Get entries whose Tags contain at least all provided Tags. Switch search strategy to `and` mode."
                     )
                   <*> flag
