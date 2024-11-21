@@ -1,7 +1,8 @@
 module JournalH.Relations where
 
+import Data.Char (toLower)
 import Data.Foldable (Foldable (fold))
-import Data.List (intersect, intersectBy, isPrefixOf, nub, sort)
+import Data.List (intersect, intersectBy, isPrefixOf, nub, sortBy)
 import JournalH.Types (JEntriesDoc (JEntriesDoc), JournalEntry (JournalEntry, tags), Tag (Tag), Tags (Tags))
 
 tagsToStrings :: Tags -> [String]
@@ -25,4 +26,4 @@ filterOrTags :: Tags -> JEntriesDoc -> [JournalEntry]
 filterOrTags ts (JEntriesDoc jes) = filter (hasAnyTags ts) jes
 
 getSortedTags :: JEntriesDoc -> Tags
-getSortedTags (JEntriesDoc jes) = stringsToTags . sort . nub . foldMap (tagsToStrings . tags) $ jes
+getSortedTags (JEntriesDoc jes) = stringsToTags . sortBy (\s1 s2 -> compare (fmap toLower s1) (fmap toLower s2)) . nub . foldMap (tagsToStrings . tags) $ jes
