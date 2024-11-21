@@ -1,16 +1,37 @@
 module Cli.Rendering where
 
 import Cli.Types
-import Data.List (isPrefixOf)
+import Data.List (isPrefixOf, transpose)
+import Data.List.Split (chunksOf)
 import Data.Time (TimeZone, defaultTimeLocale, formatTime, readPTime, utcToZonedTime)
 import JournalH.ClockInOut.Types
 import JournalH.Share (preferredTimeFormatting)
 import JournalH.Types
 import String.ANSI
+import Text.PrettyPrint.Boxes
 
 brighterMagenta = rgb 239 207 255
 
 brighterGreen = rgb 239 255 239
+
+-- Compute the maximum width for each column
+computeColumnWidths :: [[String]] -> [Int]
+computeColumnWidths rows = map (maximum . map length) (transpose rows)
+
+-- Pad each string in a row to match the column's width
+padColumns :: [Int] -> [String] -> [Box]
+padColumns widths row = [text (padRight w item) | (w, item) <- zip widths row]
+  where
+    padRight n s = s ++ replicate (n - length s) ' '
+
+-- Create a table layout with padding
+makePaddedTable :: Int -> [String] -> Box
+makePaddedTable cols items =
+  let rows = chunksOf cols items -- Split the list into rows
+      widths = computeColumnWidths rows -- Find the max width for each column
+      paddedRows = map (padColumns widths) rows -- Pad each column in every row
+      alignedRows = map (hsep 2 left) paddedRows -- Horizontally combine columns
+   in vsep 0 left alignedRows -- Vertically combine rows
 
 -- TODO:
 -- 1) Alternating colors could be cool. Also an interesting problem to solve "how to alternate a function".

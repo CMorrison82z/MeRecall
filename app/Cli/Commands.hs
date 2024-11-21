@@ -5,8 +5,6 @@ import Cli.Types (JournalViewMethod (ViewInBuffer, ViewInTerminal), TagSetStrate
 import Control.Exception (throw)
 import Control.Monad (void, when)
 import Data.Fixed (Fixed (MkFixed), showFixed)
-import Data.List (transpose)
-import Data.List.Split (chunksOf)
 import Data.Maybe (fromJust)
 import Data.Time (TimeZone, UTCTime (UTCTime, utctDay, utctDayTime), ZonedTime, defaultTimeLocale, diffUTCTime, formatTime, getCurrentTime, getCurrentTimeZone, nominalDiffTimeToSeconds, readPTime, secondsToDiffTime, utcToZonedTime)
 import Data.Time.Calendar.OrdinalDate
@@ -23,7 +21,7 @@ import System.FilePath ((</>))
 import System.IO (readFile')
 import System.IO.Temp (emptySystemTempFile, writeSystemTempFile)
 import System.Process (callProcess)
-import Text.PrettyPrint.Boxes
+import Text.PrettyPrint.Boxes (render)
 
 readFileOrEmpty fp = do
   b <- doesFileExist fp
@@ -76,25 +74,6 @@ viewJournal ts tsstrat jview = do
   where
     stratFilter TSSOr = filterOrTags
     stratFilter TSSAnd = filterAndTags
-
--- Compute the maximum width for each column
-computeColumnWidths :: [[String]] -> [Int]
-computeColumnWidths rows = map (maximum . map length) (transpose rows)
-
--- Pad each string in a row to match the column's width
-padColumns :: [Int] -> [String] -> [Box]
-padColumns widths row = [text (padRight w item) | (w, item) <- zip widths row]
-  where
-    padRight n s = s ++ replicate (n - length s) ' '
-
--- Create a table layout with padding
-makePaddedTable :: Int -> [String] -> Box
-makePaddedTable cols items =
-  let rows = chunksOf cols items -- Split the list into rows
-      widths = computeColumnWidths rows -- Find the max width for each column
-      paddedRows = map (padColumns widths) rows -- Pad each column in every row
-      alignedRows = map (hsep 2 left) paddedRows -- Horizontally combine columns
-   in vsep 0 left alignedRows -- Vertically combine rows
 
 viewAllTags :: IO ()
 viewAllTags = do
