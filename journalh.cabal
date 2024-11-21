@@ -36,6 +36,8 @@ executable jnlh
     build-depends:    base ^>=4.17.2.1
                     , journalh
                     , time >= 1.14
+                    , boxes
+                    , split
                     , optparse-applicative >= 0.18.1.0
                     , process
                     , temporary

@@ -1,6 +1,6 @@
 module Cli.Parse where
 
-import Cli.Commands (addNewEntry, createNewJobThing, startJobThing, stopJobThing, viewJobThing, viewJournal)
+import Cli.Commands (addNewEntry, createNewJobThing, startJobThing, stopJobThing, viewAllTags, viewJobThing, viewJournal)
 import Cli.Types (JournalViewMethod (ViewInBuffer, ViewInTerminal), TagSetStrategy (TSSAnd, TSSOr))
 import JournalH.Types
 import Options.Applicative
@@ -38,6 +38,12 @@ journal_cli =
                         <> help "View the entries in a temporary buffer (modifying the buffer has no effect). This can be useful for taking advantage of editor's search features."
                     )
               )
+              (progDesc "View journal entries. By default, captures any entries that contains at least one of the provided Tags")
+          )
+        <> command
+          "tags"
+          ( info
+              (pure viewAllTags)
               (progDesc "View journal entries. By default, captures any entries that contains at least one of the provided Tags")
           )
     )

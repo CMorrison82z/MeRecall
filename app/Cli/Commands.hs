@@ -5,13 +5,15 @@ import Cli.Types (JournalViewMethod (ViewInBuffer, ViewInTerminal), TagSetStrate
 import Control.Exception (throw)
 import Control.Monad (void, when)
 import Data.Fixed (Fixed (MkFixed), showFixed)
+import Data.List (transpose)
+import Data.List.Split (chunksOf)
 import Data.Maybe (fromJust)
 import Data.Time (TimeZone, UTCTime (UTCTime, utctDay, utctDayTime), ZonedTime, defaultTimeLocale, diffUTCTime, formatTime, getCurrentTime, getCurrentTimeZone, nominalDiffTimeToSeconds, readPTime, secondsToDiffTime, utcToZonedTime)
 import Data.Time.Calendar.OrdinalDate
 import Debug.Trace (traceM)
 import JournalH.ClockInOut.Relations (getStartTime)
 import JournalH.ClockInOut.Types
-import JournalH.Relations (filterAndTags, filterOrTags)
+import JournalH.Relations (filterAndTags, filterOrTags, getSortedTags)
 import JournalH.Types
 import Share
 import String.ANSI (black, bold, brightGreenBg, greenBg, rgb, white)
@@ -21,6 +23,7 @@ import System.FilePath ((</>))
 import System.IO (readFile')
 import System.IO.Temp (emptySystemTempFile, writeSystemTempFile)
 import System.Process (callProcess)
+import Text.PrettyPrint.Boxes
 
 readFileOrEmpty fp = do
   b <- doesFileExist fp
@@ -73,6 +76,33 @@ viewJournal ts tsstrat jview = do
   where
     stratFilter TSSOr = filterOrTags
     stratFilter TSSAnd = filterAndTags
+
+-- Compute the maximum width for each column
+computeColumnWidths :: [[String]] -> [Int]
+computeColumnWidths rows = map (maximum . map length) (transpose rows)
+
+-- Pad each string in a row to match the column's width
+padColumns :: [Int] -> [String] -> [Box]
+padColumns widths row = [text (padRight w item) | (w, item) <- zip widths row]
+  where
+    padRight n s = s ++ replicate (n - length s) ' '
+
+-- Create a table layout with padding
+makePaddedTable :: Int -> [String] -> Box
+makePaddedTable cols items =
+  let rows = chunksOf cols items -- Split the list into rows
+      widths = computeColumnWidths rows -- Find the max width for each column
+      paddedRows = map (padColumns widths) rows -- Pad each column in every row
+      alignedRows = map (hsep 2 left) paddedRows -- Horizontally combine columns
+   in vsep 0 left alignedRows -- Vertically combine rows
+
+viewAllTags :: IO ()
+viewAllTags = do
+  ad <- defaultJournalFile
+  x <- readFile ad
+  jes <- readIO x
+  -- I use and odd number so that the colors are interlaced.
+  putStr $ '\n' : (render . makePaddedTable 7 . words . renderTags (Tags []) . getSortedTags $ jes)
 
 newEntry :: IO (Maybe JournalEntry)
 newEntry = do
