@@ -16,9 +16,11 @@ Clock in and out :
 
     Where `startTime - *` indicates a session in progress (needs to be ended.)
 
-- A tip message at the top of the file where users submit there entry that gets automatically removed when saved.
+- (EASY) Hide date and tags by default, and show with `--verbose / -v`. Instead, just print a line
+  break "---------------------------"
+- (EASY) A tip message at the top of the file where users submit there entry that gets automatically removed when saved.
   It would explain what the purpose of the opened buffer is for. (Ex. "Enter your journal entry below :")
-- Option to add entries via Cli (rather than a temporary file).
+- (EASY) Option to add entries via Cli (rather than a temporary file).
   This has use case for automated journaling
 
 - Ability to specify another time for the journal entry (Ex. `yesterday: Did something important.`)
