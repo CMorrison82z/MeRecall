@@ -1,7 +1,7 @@
 module Cli.Rendering where
 
 import Cli.Types
-import Data.List (isPrefixOf, transpose)
+import Data.List (isPrefixOf, transpose, intercalate)
 import Data.List.Split (chunksOf)
 import Data.Time (TimeZone, defaultTimeLocale, formatTime, readPTime, utcToZonedTime)
 import JournalH.ClockInOut.Types
@@ -10,8 +10,10 @@ import JournalH.Types
 import String.ANSI
 import Text.PrettyPrint.Boxes
 
-brighterMagenta = rgb 239 207 255
+type AnsiRenderer = (String -> String)
 
+brighterMagenta, brighterGreen :: AnsiRenderer
+brighterMagenta = rgb 239 207 255
 brighterGreen = rgb 239 255 239
 
 -- Compute the maximum width for each column
@@ -23,6 +25,8 @@ padColumns :: [Int] -> [String] -> [Box]
 padColumns widths row = [text (padRight w item) | (w, item) <- zip widths row]
   where
     padRight n s = s ++ replicate (n - length s) ' '
+
+terminalSeparator window_width = replicate window_width '-'
 
 -- Create a table layout with padding
 makePaddedTable :: Int -> [String] -> Box
@@ -46,22 +50,24 @@ renderTags (Tags searchedTags) (Tags ts) = unwords . fmap (uncurry tagThing) $ z
       | any (\(Tag st) -> st `isPrefixOf` t) searchedTags = bold . color_f . show $ Tag t
       | otherwise = faint . color_f . show $ Tag t
 
-journalEntryFormat :: String -> String -> String -> String
-journalEntryFormat time_s tags_s entry_s = time_s ++ ' ' : tags_s ++ '\n' : entry_s ++ "\n"
+renderJournalEntry :: (String -> String) -> JournalEntry -> String
+renderJournalEntry color_f = color_f . entry
 
--- showEntryInTimeZone :: TimeZone -> JournalEntry -> String
--- showEntryInTimeZone tz (JournalEntry {entry_time, tags, entry}) = journalEntryFormat ts (show tags) entry
---   where
---     ts = formatTime defaultTimeLocale preferredTimeFormatting (utcToZonedTime tz entry_time) ++ show tz
+renderJournalEntries :: Int -> JEntriesDoc -> String
+renderJournalEntries window_width (JEntriesDoc js) =
+  intercalate ('\n' : terminalSeparator window_width)
+ . fmap (('\n' :) . uncurry renderJournalEntry) $ zip (cycle [brighterMagenta, brighterGreen]) js
 
-renderJournalEntry :: Tags -> TimeZone -> (String -> String) -> JournalEntry -> String
-renderJournalEntry searchedTags tz color_f JournalEntry {entry_time, tags, entry} =
+renderJournalEntryV :: Tags -> TimeZone -> (String -> String) -> JournalEntry -> String
+renderJournalEntryV searchedTags tz color_f JournalEntry {entry_time, tags, entry} =
   journalEntryFormat (brightBlack $ zonedTimeFormatter tz entry_time) (renderTags searchedTags tags) (color_f entry)
+  where
+    journalEntryFormat time_s tags_s entry_s = time_s ++ ' ' : tags_s ++ '\n' : entry_s ++ "\n"
 
 zonedTimeFormatter tz t = formatTime defaultTimeLocale preferredTimeFormatting (utcToZonedTime tz t) ++ ' ' : show tz
 
-renderJournalEntries :: Tags -> TimeZone -> JEntriesDoc -> String
-renderJournalEntries searchedTags tz (JEntriesDoc js) = unlines . fmap (uncurry (renderJournalEntry searchedTags tz)) $ zip (cycle [brighterMagenta, brighterGreen]) js
+renderJournalEntriesV :: Tags -> TimeZone -> JEntriesDoc -> String
+renderJournalEntriesV searchedTags tz (JEntriesDoc js) = ('\n' :) . unlines . fmap (uncurry (renderJournalEntryV searchedTags tz)) $ zip (cycle [brighterMagenta, brighterGreen]) js
 
 renderWorkLog tz (IncompSess IncompleteSession {start_time, note}) =
   unlines [yellow $ "START : " ++ zonedTimeFormatter tz start_time, note]

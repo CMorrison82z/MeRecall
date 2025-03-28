@@ -38,6 +38,7 @@ executable jnlh
                     , time >= 1.14
                     , boxes
                     , split
+                    , terminal-size
                     , optparse-applicative >= 0.18.1.0
                     , process
                     , temporary

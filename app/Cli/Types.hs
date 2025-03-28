@@ -6,3 +6,5 @@ import JournalH.Types (JournalEntry, Tags)
 data TagSetStrategy = TSSOr | TSSAnd
 
 data JournalViewMethod = ViewInTerminal | ViewInBuffer
+
+data Verbosity = Verbose | Normal

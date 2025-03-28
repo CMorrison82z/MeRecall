@@ -1,11 +1,13 @@
 module Cli.Commands where
 
 import Cli.Rendering
-import Cli.Types (JournalViewMethod (ViewInBuffer, ViewInTerminal), TagSetStrategy (TSSAnd, TSSOr))
+import Cli.Types (JournalViewMethod (ViewInBuffer, ViewInTerminal), TagSetStrategy (TSSAnd, TSSOr), Verbosity (..))
+import Control.Applicative (Alternative (empty))
 import Control.Exception (throw)
 import Control.Monad (void, when)
 import Data.Fixed (Fixed (MkFixed), showFixed)
-import Data.Maybe (fromJust)
+import Data.Foldable (find)
+import Data.Maybe (fromJust, fromMaybe)
 import Data.Time (TimeZone, UTCTime (UTCTime, utctDay, utctDayTime), ZonedTime, defaultTimeLocale, diffUTCTime, formatTime, getCurrentTime, getCurrentTimeZone, nominalDiffTimeToSeconds, readPTime, secondsToDiffTime, utcToZonedTime)
 import Data.Time.Calendar.OrdinalDate
 import Debug.Trace (traceM)
@@ -22,6 +24,8 @@ import System.IO (readFile')
 import System.IO.Temp (emptySystemTempFile, writeSystemTempFile)
 import System.Process (callProcess)
 import Text.PrettyPrint.Boxes (render)
+import System.Console.Terminal.Size (size, Window (..))
+import Data.Bool (bool)
 
 readFileOrEmpty fp = do
   b <- doesFileExist fp
@@ -59,17 +63,23 @@ addNewEntry = do
   when (length updatedContents > 0) $
     writeFile appFile updatedContents
 
-viewJournal :: Tags -> TagSetStrategy -> JournalViewMethod -> IO ()
-viewJournal ts tsstrat jview = do
+viewJournal :: Tags -> TagSetStrategy -> JournalViewMethod -> Verbosity -> IO ()
+viewJournal ts tsstrat jview verbosity = do
   -- TODO:
   -- Warn user if app has never been used before.
   ad <- defaultJournalFile
-  x <- readFile ad
+  x <- readFile' ad
   tz <- getCurrentTimeZone
   jes <- stratFilter tsstrat ts <$> readIO x
+  Window {width = window_width} <- fromMaybe (Window {width = 80, height = 24}) <$> size
 
   case jview of
-    ViewInTerminal -> putStr $ '\n' : renderJournalEntries ts tz (JEntriesDoc jes)
+    ViewInTerminal ->
+      putStr rendered_journal_entries
+      where
+        rendered_journal_entries = case verbosity of
+          Normal -> renderJournalEntries window_width (JEntriesDoc jes)
+          Verbose -> renderJournalEntriesV ts tz (JEntriesDoc jes)
     ViewInBuffer -> void . editWithEditor . show $ JEntriesDoc jes
   where
     stratFilter TSSOr = filterOrTags
@@ -80,7 +90,8 @@ viewAllTags = do
   ad <- defaultJournalFile
   x <- readFile ad
   jes <- readIO x
-  -- I use and odd number so that the colors are interlaced.
+
+  -- I use an odd number so that the colors are interlaced.
   putStr $ '\n' : (render . makePaddedTable 7 . words . renderTags (Tags []) . getSortedTags $ jes)
 
 newEntry :: IO (Maybe JournalEntry)
@@ -89,10 +100,9 @@ newEntry = do
   case contents of
     "" -> pure Nothing
     _ -> do
-      putStrLn "Provide a list of tags (Space separated)"
       -- TODO:
       -- Check that tag string is alphanumeric. (This is required by the parser)
-      l <- Tags . fmap Tag . words <$> getLine
+      l <- Tags . fmap Tag . words <$> getNonEmptyLinePrompted "Provide a list of tags (Space separated) :"
       t <- getCurrentTime
 
       pure
@@ -103,6 +113,14 @@ newEntry = do
             -- contents always includes a new line character at the end, so I drop it.
             entry = init contents
           }
+
+getNonEmptyLinePrompted :: String -> IO String
+getNonEmptyLinePrompted s = do
+  putStrLn s
+  l <- getLine
+  case l of
+    [] -> getNonEmptyLinePrompted s
+    _ -> pure l
 
 createNewJobThing :: String -> IO ()
 createNewJobThing jobname = do
@@ -143,9 +161,7 @@ viewJobThing jobname sinceD untilD = do
   let sinceUTC = (\x -> UTCTime {utctDayTime = secondsToDiffTime 0, utctDay = x}) <$> sinceDate
   let untilUTC = (\x -> UTCTime {utctDayTime = secondsToDiffTime (60 * 60 * 24), utctDay = x}) <$> untilDate
   WorkLogsDoc works <- readIO =<< readFile . (</> jobname) =<< defaultClockInOutDir
-  let subWorks =
-        let worksFilterPredicate = isBetweenIncM sinceUTC untilUTC . getStartTime
-         in filter worksFilterPredicate works
+  let subWorks = filter (isBetweenIncM sinceUTC untilUTC . getStartTime) works
   let time_diff =
         sum
           . fmap
