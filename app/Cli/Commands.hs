@@ -20,7 +20,7 @@ import Text.PrettyPrint.Boxes (render)
 
 addNewEntry :: IO ()
 addNewEntry = do
-  dir <- jnlhDataDirectory
+  dir <- appDataDirectory 
   createDirectoryIfMissing True dir
 
   je <-

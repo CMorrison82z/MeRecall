@@ -96,28 +96,3 @@ toJournals js = go (js) []
 
 readPJournal :: ReadP [JournalEntry]
 readPJournal = toJournals <$> (skipSpaces >> readPJLines)
-
--- OLD Stuff.
--- May want to use it again, but using parsing style from above
--- readPJournalEntry :: ReadP JournalEntry
--- readPJournalEntry = do
---   jeTime <- between (char '[') (char ']') $ readPTime True defaultTimeLocale preferredTimeFormatting
---   jeTags <- between skipSpaces (char '\n') readPTags
---   entryStr <- manyTill get (optional (char '\n') >> checkEndOfEntry)
---   return $ JournalEntry jeTime jeTags entryStr
---
--- checkEndOfEntry :: ReadP ()
--- checkEndOfEntry = do
---   remainingInput <- look
---   case remainingInput of
---     s | endOfEntryIdentifier `isPrefixOf` s -> return ()
---     _ -> pfail
---
--- -- instance Read JournalEntry where
--- --   readsPrec _ = readP_to_S readPJournalEntry
---
---
--- -- instance Read JEntriesDoc where
--- --   readsPrec _ = readP_to_S (JEntriesDoc <$> endBy readPJournalEntry (string endOfEntryIdentifier >> char '\n'))
---
---

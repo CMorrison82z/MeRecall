@@ -5,13 +5,13 @@ import System.FilePath ((</>))
 import Data.Functor ((<&>))
 
 appName :: FilePath
-appName = "journalh"
+appName = "merecall"
 
-jnlhDataDirectory :: IO FilePath
-jnlhDataDirectory = getXdgDirectory XdgData appName
+appDataDirectory :: IO FilePath
+appDataDirectory = getXdgDirectory XdgData appName
 
 defaultJournalFile :: IO FilePath
-defaultJournalFile =  jnlhDataDirectory <&> (</> "journal_entries")
+defaultJournalFile =  appDataDirectory <&> (</> "journal_entries")
 
 listToMaybeLast :: [a] -> Maybe a
 listToMaybeLast = foldl (flip $ const . Just) Nothing

@@ -33,7 +33,6 @@ executable mrcl
                       Cli.Commands
                       Cli.Rendering
                       Cli.Util
-                      Cli.Wizards
                       Share
     build-depends:    base ^>=4.17.2.1
                     , merecall
