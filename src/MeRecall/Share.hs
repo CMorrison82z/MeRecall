@@ -1,8 +1,4 @@
-module JournalH.Share where
-
-import Data.List (isPrefixOf)
-import System.Environment (getEnv)
-import System.IO (readFile')
+module MeRecall.Share where
 
 journalEntryDocFormat :: String -> String -> String -> String
 journalEntryDocFormat time_s tags_s entry_s = '[' : time_s ++ ']' : ' ' : tags_s ++ '\n' : entry_s

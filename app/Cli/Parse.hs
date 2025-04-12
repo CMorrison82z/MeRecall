@@ -1,23 +1,13 @@
 module Cli.Parse where
 
-import Cli.Commands (addNewEntry, createNewJobThing, startJobThing, stopJobThing, viewAllTags, viewJobThing, viewJournal)
+import Cli.Commands (addNewEntry, viewAllTags, viewJournal)
 import Cli.Types (JournalViewMethod (ViewInBuffer, ViewInTerminal), TagSetStrategy (TSSAnd, TSSOr), Verbosity (..))
-import JournalH.Types
+import MeRecall.Types
 import Options.Applicative
+import Share (defaultJournalFile)
 
 cli :: Parser (IO ())
 cli =
-  subparser
-    ( command
-        "journal"
-        (info journal_cli (progDesc "Stuff for actual journalling"))
-        <> command
-          "worklog"
-          (info work_cli (progDesc "Stuff for recording work time stamps stuff"))
-    )
-
-journal_cli :: Parser (IO ())
-journal_cli =
   subparser
     ( command "new" (info (pure addNewEntry) (progDesc "Add a new entry to the journal"))
         <> command
@@ -53,32 +43,10 @@ journal_cli =
               (pure viewAllTags)
               (progDesc "View journal entries. By default, captures any entries that contains at least one of the provided Tags")
           )
-    )
-
-work_cli :: Parser (IO ())
-work_cli =
-  subparser
-    ( command "new" (info (createNewJobThing <$> strArgument (metavar "JOBNAME")) (progDesc "Create new work thing."))
         <> command
-          "start"
+          "path"
           ( info
-              (startJobThing <$> strArgument (metavar "JOBNAME"))
-              (progDesc "Start a job session thing.")
-          )
-        <> command
-          "stop"
-          ( info
-              (stopJobThing <$> strArgument (metavar "JOBNAME"))
-              (progDesc "Stop a job session thing.")
-          )
-        <> command
-          "view"
-          ( info
-              ( viewJobThing
-                  <$> strArgument (metavar "JOBNAME")
-                  <*> optional (strOption (long "from" <> short 'f' <> metavar "SINCE Y/M/D"))
-                  <*> optional (strOption (long "to" <> short 't' <> metavar "UNTIL Y/M/D"))
-              )
-              (progDesc "View job sessions")
+              (pure $ defaultJournalFile >>= putStrLn)
+              (progDesc "Output path to data file.")
           )
     )

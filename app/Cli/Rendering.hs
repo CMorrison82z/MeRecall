@@ -1,12 +1,10 @@
 module Cli.Rendering where
 
-import Cli.Types
 import Data.List (isPrefixOf, transpose, intercalate)
 import Data.List.Split (chunksOf)
-import Data.Time (TimeZone, defaultTimeLocale, formatTime, readPTime, utcToZonedTime)
-import JournalH.ClockInOut.Types
-import JournalH.Share (preferredTimeFormatting)
-import JournalH.Types
+import Data.Time (TimeZone, defaultTimeLocale, formatTime, utcToZonedTime)
+import MeRecall.Share (preferredTimeFormatting)
+import MeRecall.Types
 import String.ANSI
 import Text.PrettyPrint.Boxes
 
@@ -68,16 +66,3 @@ zonedTimeFormatter tz t = formatTime defaultTimeLocale preferredTimeFormatting (
 
 renderJournalEntriesV :: Tags -> TimeZone -> JEntriesDoc -> String
 renderJournalEntriesV searchedTags tz (JEntriesDoc js) = ('\n' :) . unlines . fmap (uncurry (renderJournalEntryV searchedTags tz)) $ zip (cycle [brighterMagenta, brighterGreen]) js
-
-renderWorkLog tz (IncompSess IncompleteSession {start_time, note}) =
-  unlines [yellow $ "START : " ++ zonedTimeFormatter tz start_time, note]
-renderWorkLog tz (CompSess CompleteSession {time_interval = (start_time, end_time), start_note, end_note}) =
-  unlines
-    [ green $ "START : " ++ zonedTimeFormatter tz start_time,
-      start_note,
-      red $ "END : " ++ zonedTimeFormatter tz end_time,
-      end_note
-    ]
-
-renderWorkLogs :: TimeZone -> WorkLogsDoc -> String
-renderWorkLogs tz (WorkLogsDoc ws) = init . unlines . fmap (renderWorkLog tz) $ ws

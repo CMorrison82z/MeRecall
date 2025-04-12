@@ -1,9 +1,8 @@
-module JournalH.Relations where
+module MeRecall.Relations where
 
 import Data.Char (toLower)
-import Data.Foldable (Foldable (fold))
-import Data.List (intersect, intersectBy, isPrefixOf, nub, sortBy)
-import JournalH.Types (JEntriesDoc (JEntriesDoc), JournalEntry (JournalEntry, tags), Tag (Tag), Tags (Tags))
+import Data.List (intersectBy, isPrefixOf, nub, sortBy)
+import MeRecall.Types (JEntriesDoc (JEntriesDoc), JournalEntry (JournalEntry, tags), Tag (Tag), Tags (Tags))
 
 tagsToStrings :: Tags -> [String]
 tagsToStrings (Tags ts) = fmap (\(Tag t) -> t) ts

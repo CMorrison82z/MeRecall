@@ -1,7 +1,8 @@
 module Share where
 
-import System.Directory (XdgDirectory (XdgData), doesFileExist, getXdgDirectory)
+import System.Directory (XdgDirectory (XdgData), getXdgDirectory)
 import System.FilePath ((</>))
+import Data.Functor ((<&>))
 
 appName :: FilePath
 appName = "journalh"
@@ -10,10 +11,7 @@ jnlhDataDirectory :: IO FilePath
 jnlhDataDirectory = getXdgDirectory XdgData appName
 
 defaultJournalFile :: IO FilePath
-defaultJournalFile = (</> "journal.txt") <$> jnlhDataDirectory
-
-defaultClockInOutDir :: IO FilePath
-defaultClockInOutDir = (</> "clockinout") <$> jnlhDataDirectory
+defaultJournalFile =  jnlhDataDirectory <&> (</> "journal_entries")
 
 listToMaybeLast :: [a] -> Maybe a
 listToMaybeLast = foldl (flip $ const . Just) Nothing

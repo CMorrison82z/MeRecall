@@ -1,13 +1,9 @@
-module JournalH.Types where
+module MeRecall.Types where
 
-import Control.Applicative ((<|>))
-import Control.Monad (void)
-import Data.Char (isAlpha, isAlphaNum, isSpace)
-import Data.List (isPrefixOf)
-import Data.Maybe (catMaybes, isJust, mapMaybe)
+import Data.Char (isAlphaNum)
+import Data.Maybe (isJust, mapMaybe)
 import Data.Time (UTCTime, defaultTimeLocale, formatTime, readPTime)
-import Debug.Trace (trace, traceShow, traceShowId, traceShowM)
-import JournalH.Share (journalEntryDocFormat, preferredTimeFormatting)
+import MeRecall.Share (journalEntryDocFormat, preferredTimeFormatting)
 import Text.ParserCombinators.ReadP
 
 newtype Tag = Tag String
@@ -30,7 +26,7 @@ instance Show Tags where
   show (Tags xs) = unwords . fmap show $ xs
 
 readPTags :: ReadP Tags
-readPTags = fmap Tags $ sepBy readPTag (char ' ') -- <* eof
+readPTags = Tags <$> sepBy readPTag (char ' ') -- <* eof
 
 -- instance Read Tags where
 --   readsPrec _ = readP_to_S readPTags
