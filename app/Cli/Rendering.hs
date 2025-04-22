@@ -53,16 +53,16 @@ renderJournalEntry color_f = color_f . entry
 
 renderJournalEntries :: Int -> JEntriesDoc -> String
 renderJournalEntries window_width (JEntriesDoc js) =
-  intercalate ('\n' : terminalSeparator window_width)
- . fmap (('\n' :) . uncurry renderJournalEntry) $ zip (cycle [brighterMagenta, brighterGreen]) js
+  intercalate ('\n' : terminalSeparator window_width ++ "\n")
+ . fmap ( uncurry renderJournalEntry) $ zip (cycle [brighterMagenta, brighterGreen]) js
 
 renderJournalEntryV :: Tags -> TimeZone -> (String -> String) -> JournalEntry -> String
 renderJournalEntryV searchedTags tz color_f JournalEntry {entry_time, tags, entry} =
   journalEntryFormat (brightBlack $ zonedTimeFormatter tz entry_time) (renderTags searchedTags tags) (color_f entry)
   where
-    journalEntryFormat time_s tags_s entry_s = time_s ++ ' ' : tags_s ++ '\n' : entry_s ++ "\n"
+    journalEntryFormat time_s tags_s entry_s = time_s ++ ' ' : tags_s ++ '\n' : entry_s
 
 zonedTimeFormatter tz t = formatTime defaultTimeLocale preferredTimeFormatting (utcToZonedTime tz t) ++ ' ' : show tz
 
 renderJournalEntriesV :: Tags -> TimeZone -> JEntriesDoc -> String
-renderJournalEntriesV searchedTags tz (JEntriesDoc js) = ('\n' :) . unlines . fmap (uncurry (renderJournalEntryV searchedTags tz)) $ zip (cycle [brighterMagenta, brighterGreen]) js
+renderJournalEntriesV searchedTags tz (JEntriesDoc js) = unlines . fmap (uncurry (renderJournalEntryV searchedTags tz)) $ zip (cycle [brighterMagenta, brighterGreen]) js

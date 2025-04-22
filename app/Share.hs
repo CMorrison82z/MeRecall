@@ -7,6 +7,9 @@ import Data.Functor ((<&>))
 appName :: FilePath
 appName = "merecall"
 
+appDescription :: String
+appDescription = "A simple journaling app. Tag system makes for effective recall of information."
+
 appDataDirectory :: IO FilePath
 appDataDirectory = getXdgDirectory XdgData appName
 

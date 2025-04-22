@@ -12,7 +12,7 @@ import MeRecall.Relations (filterAndTags, filterOrTags, getSortedTags)
 import MeRecall.Types
 import Share
 import System.Console.Terminal.Size (Window (..), size)
-import System.Console.Wizard (line, nonEmpty, retry, run, validator)
+import System.Console.Wizard (line, nonEmpty, retry, run, validator, retryMsg)
 import System.Console.Wizard.BasicIO (basicIO)
 import System.Directory (createDirectoryIfMissing, doesFileExist)
 import System.IO (readFile')
@@ -38,8 +38,6 @@ addNewEntry = do
       ( \case
           "" -> pure Nothing
           contents -> do
-            -- TODO:
-            -- Check that tag string is alphanumeric. (This is required by the parser)
             user_tags <-
               Tags
                 . fmap Tag
@@ -47,10 +45,11 @@ addNewEntry = do
                 . fromJust
                 <$> ( run
                         . basicIO
-                        . retry
+                        . retryMsg "One or more invalid tags. Must be AlphaNumeric"
                         . validator (all (\c -> isAlphaNum c || isSpace c))
                         . nonEmpty
                         . line
+                        -- FIXME: This Prompt string isn't being output. WHAT THE **** !?
                         $ "Provide a list of tags (Space separated) :"
                     )
 
@@ -78,7 +77,7 @@ viewJournal ts tsstrat jview verbosity = do
 
   case jview of
     ViewInTerminal ->
-      putStr rendered_journal_entries
+      putStrLn rendered_journal_entries
       where
         rendered_journal_entries = case verbosity of
           Normal -> renderJournalEntries window_width (JEntriesDoc jes)

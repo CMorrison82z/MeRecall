@@ -2,7 +2,7 @@
 , optparse-applicative, process, split, temporary, text-ansi, time
 }:
 mkDerivation {
-  pname = "journalh";
+  pname = "merecall";
   version = "0.1.0.0";
   src = ./.;
   isLibrary = true;
@@ -13,5 +13,5 @@ mkDerivation {
     temporary text-ansi time
   ];
   license = "unknown";
-  mainProgram = "jnlh";
+  mainProgram = "mrcl";
 }
