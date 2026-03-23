@@ -10,3 +10,6 @@ A way to edit entries. The entries to edit would be chosen same way as you choos
   @tag1 @tag2 @tag3
   Another journal entry
   ...
+
+A set of tags should be unique. If 2 entries have the exact same set of tags, (no more, and no less), then they're the same.
+In this case, append to the first journal entry.

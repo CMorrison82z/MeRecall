@@ -1,6 +1,6 @@
 module Share where
 
-import System.Directory (XdgDirectory (XdgData), getXdgDirectory)
+import System.Directory (XdgDirectory (XdgData), getXdgDirectory, listDirectory)
 import System.FilePath ((</>))
 import Data.Functor ((<&>))
 
@@ -21,7 +21,7 @@ listToMaybeLast = foldl (flip $ const . Just) Nothing
 
 -- Inclusive
 isBetweenInc :: (Ord a, Eq a) => a -> a -> a -> Bool
-isBetweenInc x y z = x <= z && z <= y
+isBetweenInc lower_b upper_b x = lower_b <= x && x <= upper_b
 
 isBetweenIncM :: (Ord a, Eq a) => Maybe a -> Maybe a -> a -> Bool
 isBetweenIncM x y z = maybe True (<= z) x && maybe True (z <=) y

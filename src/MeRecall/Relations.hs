@@ -2,27 +2,24 @@ module MeRecall.Relations where
 
 import Data.Char (toLower)
 import Data.List (intersectBy, isPrefixOf, nub, sortBy)
-import MeRecall.Types (JEntriesDoc (JEntriesDoc), JournalEntry (JournalEntry, tags), Tag (Tag), Tags (Tags))
+import Data.Text (Text)
+import qualified Data.Text as T
+import MeRecall.Types (JEntriesDoc (JEntriesDoc), JournalEntry (JournalEntry, tags), Tag (Tag), Tags (Tags), unTags)
 
-tagsToStrings :: Tags -> [String]
-tagsToStrings (Tags ts) = fmap (\(Tag t) -> t) ts
-
-stringsToTags :: [String] -> Tags
-stringsToTags ss = Tags $ fmap Tag ss
+textsToTags :: [Text] -> Tags
+textsToTags txts = Tags $ fmap Tag txts
 
 -- NOTE:
 -- This checks if all `ts` are in JournalEntry tags, but the JournalEntry could have more than `ts`
 hasAllTags :: Tags -> JournalEntry -> Bool
-hasAllTags (Tags ts) (JournalEntry {tags = (Tags jts)}) = (ts ==) . intersectBy (\(Tag s1) (Tag s2) -> isPrefixOf s1 s2) ts $ jts
+hasAllTags ts (JournalEntry {tags = jts}) = hasAllS (unTags ts) $ unTags jts
 
 hasAnyTags :: Tags -> JournalEntry -> Bool
-hasAnyTags (Tags ts) (JournalEntry {tags = (Tags jts)}) = not . null . intersectBy (\(Tag s1) (Tag s2) -> isPrefixOf s1 s2) ts $ jts
-
-filterAndTags :: Tags -> JEntriesDoc -> [JournalEntry]
-filterAndTags ts (JEntriesDoc jes) = filter (hasAllTags ts) jes
-
-filterOrTags :: Tags -> JEntriesDoc -> [JournalEntry]
-filterOrTags ts (JEntriesDoc jes) = filter (hasAnyTags ts) jes
+hasAnyTags ts (JournalEntry {tags = jts}) = hasAnyS (unTags ts) $ unTags jts
 
 getSortedTags :: JEntriesDoc -> Tags
-getSortedTags (JEntriesDoc jes) = stringsToTags . sortBy (\s1 s2 -> compare (fmap toLower s1) (fmap toLower s2)) . nub . foldMap (tagsToStrings . tags) $ jes
+getSortedTags (JEntriesDoc jes) = textsToTags . sortBy (\t1 t2 -> compare (fmap toLower $ T.unpack t1) (fmap toLower $ T.unpack t2)) . nub . foldMap (unTags . tags) $ jes
+
+hasAllS txts1 txts2 = (txts1 ==) . intersectBy (\t1 t2 -> T.isPrefixOf t1 t2) txts1 $ txts2
+
+hasAnyS txts1 txts2 = not . null . intersectBy (\t1 t2 -> T.isPrefixOf t1 t2) txts1 $ txts2

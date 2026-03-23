@@ -1,6 +1,7 @@
 module Cli.Util where
 
-import System.Directory (doesFileExist)
+import Control.Monad (when)
+import System.Directory (doesFileExist, renameFile)
 import System.IO.Temp (emptySystemTempFile, writeSystemTempFile)
 import System.Environment (getEnv)
 import System.Process (callProcess)
@@ -30,3 +31,9 @@ editWithEditor s = do
   callProcess editor [tempFile]
 
   readFile' tempFile
+
+-- Write to temp, then swap
+safeWriteFile f d = do
+    tempFile <- writeSystemTempFile "journalh_tmp_write" d
+
+    renameFile tempFile f
