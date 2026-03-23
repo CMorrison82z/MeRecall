@@ -1,14 +1,20 @@
 module Cli.Commands where
 
 import Cli.Rendering
-import Cli.Types (JournalViewMethod (ViewInBuffer, ViewInTerminal), TagSetStrategy (TSSAnd, TSSOr), Verbosity (..))
+import Control.Exception (evaluate)
+import Control.DeepSeq (force)
+import Cli.Types (JournalViewMethod (..), TagSetStrategy (..), ViewOptions (..))
 import Cli.Util
-import Control.Monad (void)
+import Control.Monad (void, when)
 import Data.Bool (bool)
+import Text.Read (readMaybe)
 import Data.Char (isAlphaNum, isSpace)
+import Data.Text (Text)
+import qualified Data.Text as T
+import qualified Data.Text.IO as TIO
 import Data.Maybe (fromJust, fromMaybe)
 import Data.Time (getCurrentTime, getCurrentTimeZone)
-import MeRecall.Relations (filterAndTags, filterOrTags, getSortedTags)
+import MeRecall.Relations (getSortedTags, hasAnyTags, hasAllTags)
 import MeRecall.Types
 import Share
 import System.Console.Terminal.Size (Window (..), size)
@@ -40,7 +46,7 @@ addNewEntry = do
           contents -> do
             user_tags <-
               Tags
-                . fmap Tag
+                . fmap (Tag . T.pack)
                 . words
                 . fromJust
                 <$> ( run
@@ -61,31 +67,82 @@ addNewEntry = do
                 { entry_time = t,
                   tags = user_tags,
                   -- contents always includes a new line character at the end, so I drop it.
-                  entry = init contents
+                  entry = T.pack $ init contents
                 }
       )
         =<< inputFromEditor
 
-viewJournal :: Tags -> TagSetStrategy -> JournalViewMethod -> Verbosity -> IO ()
-viewJournal ts tsstrat jview verbosity = do
+editEntry :: Int -> IO ()
+editEntry index = do
+  ad <- defaultJournalFile
+  doesFileExist ad >>= bool (ioError . userError $ "There are no journal entries") (pure ())
+  x <- readFile' ad
+  JEntriesDoc allJEntries <- readIO x
+
+  let (prevEntries, toEditEntry:restEntries) = splitAt index allJEntries
+
+  finishEdittedEntry  <- editEntry toEditEntry >>= ( \case
+          Just x -> pure x
+          Nothing -> ioError . userError $ "Error. Result is an invalid Journal Entry"
+      )
+  
+  -- https://hackage.haskell.org/package/base-4.21.0.0/docs/Control-Exception.html#v:evaluate : 
+  let edittedJournal = show . JEntriesDoc $ prevEntries ++ finishEdittedEntry:restEntries
+
+  safeWriteFile ad edittedJournal
+
+  where
+    editEntry :: JournalEntry -> IO (Maybe JournalEntry)
+    editEntry e =
+        ( \case
+            "" -> pure Nothing
+            contents -> pure $ fmap (\(JEntriesDoc (jentry:_)) -> jentry) $ readMaybe contents
+        )
+          =<< editWithEditor (show e)
+
+deleteEntries :: [Int] -> IO ()
+deleteEntries deleteIndices = do
+  ad <- defaultJournalFile
+  doesFileExist ad >>= bool (ioError . userError $ "There are no journal entries") (pure ())
+  x <- readFile' ad
+  JEntriesDoc allJEntries <- readIO x
+  
+  let go jes [] _ = jes
+      go [] _ _ = []
+      go (je:jes) (di:dis) i | i == di = go jes dis (i + 1)
+                             | otherwise = je:go jes (di:dis) (i + 1)
+
+  let edittedJournal = show $ JEntriesDoc $ go allJEntries deleteIndices 0
+
+  safeWriteFile ad edittedJournal
+
+viewJournal :: Tags -> ViewOptions -> IO ()
+viewJournal queriedTags ViewOptions {excludeAfter, tagSetStrategy, viewMethod, verbose} = do
   ad <- defaultJournalFile
   doesFileExist ad >>= bool (ioError . userError $ "There are no journal entries") (pure ())
   x <- readFile' ad
   tz <- getCurrentTimeZone
-  jes <- stratFilter tsstrat ts <$> readIO x
+  JEntriesDoc allJEntries <- readIO x
+
+  let Tags queriedUntags = queriedTags
+      filtererF = bool (filter $ stratFilter tagSetStrategy . snd) id $ queriedUntags == []
+        -- Zip with indices, used in `verbose` mode
+      (jIndices, filteredJEntries) = unzip . filtererF $ zip [0..] allJEntries
+
   Window {width = window_width} <- fromMaybe (Window {width = 80, height = 24}) <$> size
 
-  case jview of
+  case viewMethod of
     ViewInTerminal ->
-      putStrLn rendered_journal_entries
-      where
-        rendered_journal_entries = case verbosity of
-          Normal -> renderJournalEntries window_width (JEntriesDoc jes)
-          Verbose -> renderJournalEntriesV ts tz (JEntriesDoc jes)
-    ViewInBuffer -> void . editWithEditor . show $ JEntriesDoc jes
+      putStrLn 
+        $ bool 
+            (renderJournalEntries window_width $ JEntriesDoc filteredJEntries) 
+            (renderJournalEntriesV queriedTags jIndices tz $ JEntriesDoc filteredJEntries) 
+            verbose
+    ViewInBuffer -> void . editWithEditor . show $ JEntriesDoc filteredJEntries
   where
-    stratFilter TSSOr = filterOrTags
-    stratFilter TSSAnd = filterAndTags
+    excludedTags = let Tags ts' = queriedTags in Tags $ drop (excludeAfter - 1) ts'
+    stratFilter TSSOr je = not (hasAnyTags excludedTags je) && hasAnyTags queriedTags je
+    stratFilter TSSAnd je = not (hasAnyTags excludedTags je) && hasAllTags queriedTags je
 
 viewAllTags :: IO ()
 viewAllTags = do

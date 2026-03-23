@@ -21,6 +21,7 @@ library
   build-depends:
     , base  ^>=4.17.2.1
     , time  >=1.14
+    , text
 
   default-extensions:
     LambdaCase
@@ -49,13 +50,15 @@ executable mrcl
     , filepath              >=1.5.2.0
     , merecall
     , optparse-applicative  >=0.18.1.0
+    , wizards
+    , deepseq
     , process
     , split
     , temporary
     , terminal-size
     , text-ansi
     , time                  >=1.14
-    , wizards
+    , text
 
   hs-source-dirs:     app
   default-extensions:

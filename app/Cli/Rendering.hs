@@ -2,6 +2,7 @@ module Cli.Rendering where
 
 import Data.List (isPrefixOf, transpose, intercalate)
 import Data.List.Split (chunksOf)
+import qualified Data.Text as T
 import Data.Time (TimeZone, defaultTimeLocale, formatTime, utcToZonedTime)
 import MeRecall.Share (preferredTimeFormatting)
 import MeRecall.Types
@@ -44,12 +45,12 @@ renderTags (Tags searchedTags) (Tags ts) = unwords . fmap (uncurry tagThing) $ z
   where
     -- TODO:
     -- Resolve badness of pattern matching out the Tag string, but then wrapping it back into a `Tag` for using `show`.
-    tagThing color_f (Tag t)
-      | any (\(Tag st) -> st `isPrefixOf` t) searchedTags = bold . color_f . show $ Tag t
-      | otherwise = faint . color_f . show $ Tag t
+    tagThing color_f tg@(Tag t)
+      | any (\(Tag st) -> st `T.isPrefixOf` t) searchedTags = bold . color_f $ show tg
+      | otherwise = faint . color_f $ show tg
 
 renderJournalEntry :: (String -> String) -> JournalEntry -> String
-renderJournalEntry color_f = color_f . entry
+renderJournalEntry color_f = color_f . T.unpack . entry
 
 renderJournalEntries :: Int -> JEntriesDoc -> String
 renderJournalEntries window_width (JEntriesDoc js) =
@@ -58,11 +59,11 @@ renderJournalEntries window_width (JEntriesDoc js) =
 
 renderJournalEntryV :: Tags -> TimeZone -> (String -> String) -> JournalEntry -> String
 renderJournalEntryV searchedTags tz color_f JournalEntry {entry_time, tags, entry} =
-  journalEntryFormat (brightBlack $ zonedTimeFormatter tz entry_time) (renderTags searchedTags tags) (color_f entry)
+  journalEntryFormat (brightBlack $ zonedTimeFormatter tz entry_time) (renderTags searchedTags tags) (color_f $ T.unpack entry)
   where
     journalEntryFormat time_s tags_s entry_s = time_s ++ ' ' : tags_s ++ '\n' : entry_s
 
 zonedTimeFormatter tz t = formatTime defaultTimeLocale preferredTimeFormatting (utcToZonedTime tz t) ++ ' ' : show tz
 
-renderJournalEntriesV :: Tags -> TimeZone -> JEntriesDoc -> String
-renderJournalEntriesV searchedTags tz (JEntriesDoc js) = unlines . fmap (uncurry (renderJournalEntryV searchedTags tz)) $ zip (cycle [brighterMagenta, brighterGreen]) js
+renderJournalEntriesV :: Tags -> [Int] -> TimeZone -> JEntriesDoc -> String
+renderJournalEntriesV searchedTags jIndices tz (JEntriesDoc js) = intercalate "\n" . fmap (\(i, clr, j) -> show i ++ ' ':renderJournalEntryV searchedTags tz clr j) $ zip3 jIndices (cycle [brighterMagenta, brighterGreen]) js
