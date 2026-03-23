@@ -1,3 +1,5 @@
+# WARN:
+# DO NOT USE THIS FLAKE !
 # Yeah this is irreproducible and specific to my machine. Deal with it !
 {
     description = "Note taking app";

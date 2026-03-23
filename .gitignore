@@ -1,5 +1,3 @@
 dist-newstyle
 .envrc
 .direnv
-flake.nix
-flake.lock
