@@ -1,3 +1,5 @@
 dist-newstyle
-default.nix
-merecall.nix
+.envrc
+.direnv
+flake.nix
+flake.lock
