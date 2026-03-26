@@ -49,6 +49,8 @@ renderTags (Tags searchedTags) (Tags ts) = unwords . fmap (uncurry tagThing) $ z
       | any (\(Tag st) -> st `T.isPrefixOf` t) searchedTags = bold . color_f $ show tg
       | otherwise = faint . color_f $ show tg
 
+renderDeletePrompt = "Are you sure you want to " ++ (red $ bold "DELETE") ++ " the entry shown above ?" ++ bold " (y/n) : "
+
 renderJournalEntry :: (String -> String) -> JournalEntry -> String
 renderJournalEntry color_f = color_f . T.unpack . entry
 

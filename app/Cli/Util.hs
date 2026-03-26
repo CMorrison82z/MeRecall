@@ -3,6 +3,7 @@ module Cli.Util where
 import Control.Monad (when)
 import System.Directory (doesFileExist, renameFile)
 import System.IO.Temp (emptySystemTempFile, writeSystemTempFile)
+import System.IO (hGetBuffering, hSetBuffering)
 import System.Environment (getEnv)
 import System.Process (callProcess)
 import System.IO (readFile')
@@ -37,3 +38,15 @@ safeWriteFile f d = do
     tempFile <- writeSystemTempFile "journalh_tmp_write" d
 
     renameFile tempFile f
+
+withBuffering hdl md act = do
+    prevMode <- hGetBuffering hdl
+    hSetBuffering hdl md
+    res <- act
+    hSetBuffering hdl prevMode
+    pure res
+
+(!?) :: [a] -> Int -> Maybe a
+(x:xs) !? 0 = Just x 
+[] !? _ = Nothing
+(x:xs) !? i = xs !? (i - 1)
