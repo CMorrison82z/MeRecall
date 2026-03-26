@@ -1,15 +1,17 @@
 module Cli.Commands where
 
 import Cli.Rendering
+import Debug.Trace (trace)
 import Control.Exception (evaluate)
 import Control.DeepSeq (force)
 import Cli.Types (JournalViewMethod (..), TagSetStrategy (..), ViewOptions (..))
 import Cli.Util
-import Control.Monad (void, when)
+import Control.Monad (void, when, filterM)
 import Data.Bool (bool)
 import Text.Read (readMaybe)
 import Data.Char (isAlphaNum, isSpace)
 import Data.Text (Text)
+import System.IO (stdout, BufferMode(..))
 import qualified Data.Text as T
 import qualified Data.Text.IO as TIO
 import Data.Maybe (fromJust, fromMaybe)
@@ -18,8 +20,8 @@ import MeRecall.Relations (getSortedTags, hasAnyTags, hasAllTags)
 import MeRecall.Types
 import Share
 import System.Console.Terminal.Size (Window (..), size)
-import System.Console.Wizard (line, nonEmpty, retry, run, validator, retryMsg)
-import System.Console.Wizard.BasicIO (basicIO)
+import System.Console.Wizard
+import System.Console.Wizard.BasicIO
 import System.Directory (createDirectoryIfMissing, doesFileExist)
 import System.IO (readFile')
 import Text.PrettyPrint.Boxes (render)
@@ -49,14 +51,14 @@ addNewEntry = do
                 . fmap (Tag . T.pack)
                 . words
                 . fromJust
-                <$> ( run
+                <$> (withBuffering stdout NoBuffering . run
                         . basicIO
                         . retryMsg "One or more invalid tags. Must be AlphaNumeric"
                         . validator (all (\c -> isAlphaNum c || isSpace c))
                         . nonEmpty
-                        . line
-                        -- FIXME: This Prompt string isn't being output. WHAT THE **** !?
-                        $ "Provide a list of tags (Space separated) :"
+                        -- NOTE: `wizard` implementation for `Line` for `BasicIO` is wrong, does not output prompt string. So do it manually...
+                        $ outputLn "Provide a list of tags (Space separated) :"
+                        >> line ""
                     )
 
             t <- getCurrentTime
@@ -106,13 +108,27 @@ deleteEntries deleteIndices = do
   doesFileExist ad >>= bool (ioError . userError $ "There are no journal entries") (pure ())
   x <- readFile' ad
   JEntriesDoc allJEntries <- readIO x
-  
-  let go jes [] _ = jes
+
+  let userConfirmDelete ::  Int -> Wizard BasicIO Bool
+      userConfirmDelete i = do
+        candidateEntry <- liftMaybe $ allJEntries !? i
+        outputLn . T.unpack $ entry candidateEntry
+        -- `character` considers the `\n` from the previous in the next prompt, causing an immediiate `retry` which duplicates the `output` message.
+        -- Therefore, use `fmap head line`
+        ynChar <- retry . validator (\c -> c == 'y' || c == 'n') $ output renderDeletePrompt >> fmap head (line "")
+        
+        pure $ case ynChar of
+          'y' -> True
+          'n' -> False
+          _   -> False -- Should be unreachable, but false just because
+      go jes [] _ = jes
       go [] _ _ = []
       go (je:jes) (di:dis) i | i == di = go jes dis (i + 1)
                              | otherwise = je:go jes (di:dis) (i + 1)
+  
+  confirmedIndices <- withBuffering stdout NoBuffering . fmap (fromMaybe []) . run $ filterM userConfirmDelete deleteIndices
 
-  let edittedJournal = show $ JEntriesDoc $ go allJEntries deleteIndices 0
+  let edittedJournal = show $ JEntriesDoc $ go allJEntries confirmedIndices 0
 
   safeWriteFile ad edittedJournal
 
